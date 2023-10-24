@@ -7,6 +7,15 @@ import PasswordStrengthBar from "react-password-strength-bar";
 import { Link } from "react-router-dom";
 import { profileTabs } from "../../data/TabsData";
 import UserHeading from "../../components/UserHeading";
+import { useContext } from "react";
+import axios from "axios";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { UserContext } from "../../hooks/LogedUserHook";
+
+const useUser = () => {
+  return useContext(UserContext);
+}
 
 const Security = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -18,7 +27,7 @@ const Security = () => {
   const [showPasswordError, setShowPasswordError] = useState(false); // password confirmation error
   const [isConfirmPasswordOkay, setConfirmPasswordOkay] = useState(true); // we assume that password is right in confirm field\
   const [passwordAlertClass, setPasswordAlertClass] = useState("is-valid");
-
+  const { user } = useUser();
   useEffect(() => {
     if (!isConfirmPasswordOkay) {
       if (newPassword === confirmPassword) {
@@ -46,6 +55,27 @@ const Security = () => {
       setType("password");
       setPasswordState("Show Password");
     }
+  };
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    const url = 'http://localhost:5000/api/users/change/password';
+    try {
+      const response = await axios.patch(url, { email: user.email, oldPassword: currentPassword, newPassword: newPassword });
+      if (response) {
+        toast.success("Password Changed Successfully");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    }
+    catch (err) {
+      console.log(err.response.data);
+      toast.error("Request Failed");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+
   };
 
   return (
@@ -107,9 +137,12 @@ const Security = () => {
             <Link to={"/profile"}>
               <button className="cancel-btn">Cancel</button>
             </Link>
-            <button type="submit" className="save-btn">
-              Save <FaFile />
-            </button>
+            <div>
+              <button type="submit" onClick={handlePasswordSubmit} className="save-btn">
+                Save <FaFile />
+              </button>
+              <ToastContainer />
+            </div>
           </div>
         </form>
 
